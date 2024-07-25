@@ -4,7 +4,7 @@ const bip39 = require('bip39');
 const bs58 = require('bs58');
 const { derivePath } = require('ed25519-hd-key');
 
-const privateKeysNUM = 50;
+const privateKeysNUM = 100;
 const seedPhrasesOrKeys = JSON.parse(fs.readFileSync('./config/mnemonics.json', 'utf-8'));
 
 async function getKeypairFromSeed(seedPhrase, keypairNum) {

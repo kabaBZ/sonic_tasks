@@ -7,7 +7,7 @@ const axios = require('axios');
 const TwoCaptcha = require("@2captcha/captcha-solver")
 require('colors');
 
-const solver = new TwoCaptcha.Solver("<you api key>")       //填入验证码平台api私钥
+const solver = new TwoCaptcha.Solver("<you_api_key>")       //填入验证码平台api私钥
 
 const PRIVATE_KEYS = JSON.parse(fs.readFileSync('./config/privateKeys.json', 'utf-8'));      //获取文件中的私钥
 
@@ -80,9 +80,10 @@ async function bypass_turnstile(address, retry_count = 0) {
 
 (async () => {
     try {
-        for (const privateKey of PRIVATE_KEYS) {
+        for (let i = 0; i < PRIVATE_KEYS.length; i++) {
+            const privateKey = PRIVATE_KEYS[i];
             const publicKey = get_keypair(privateKey).publicKey.toBase58();
-            console.log(`${publicKey} 开始领水`.green);
+            console.log(`正在处理第 ${i + 1}/${PRIVATE_KEYS.length} 个私钥: ${publicKey} 开始领水`.green);
             
             await bypass_turnstile(publicKey);
             await delay(3);
