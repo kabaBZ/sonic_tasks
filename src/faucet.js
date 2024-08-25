@@ -4,12 +4,12 @@ const base58 = require('bs58');
 const { faker } = require('@faker-js/faker');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const axios = require('axios');
-const TwoCaptcha = require("@2captcha/captcha-solver")
-require('colors');
+const TwoCaptcha = require("@2captcha/captcha-solver");
+const logger = require('./setup_log');
 
-const solver = new TwoCaptcha.Solver("<you_api_key>")       //填入验证码平台api私钥
+const solver = new TwoCaptcha.Solver("you api");       //填入验证码平台api私钥
 
-const PRIVATE_KEYS = JSON.parse(fs.readFileSync('./config/privateKeys.json', 'utf-8'));      //获取文件中的私钥
+const PRIVATE_KEYS = JSON.parse(fs.readFileSync('./config/privateKeys.json', 'utf-8'));
 
 const delay = (seconds) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 
@@ -31,8 +31,8 @@ async function faucet_claim(address, beraer_token) {
         let config = {
             method: 'get',
             maxBodyLength: Infinity,
-            // url: `https://faucet-api.sonic.game/airdrop/${address}/0.5/${beraer_token}`,     //备用水龙头
-            url: `https://faucet-api-grid-1.sonic.game/airdrop/${address}/0.5/${beraer_token}`,
+            url: `https://faucet-api.sonic.game/airdrop/${address}/0.5/${beraer_token}`,     //备用水龙头
+            // url: `https://faucet-api-grid-1.sonic.game/airdrop/${address}/0.5/${beraer_token}`,
             headers: {
                 "Accept": "application/json, text/plain, */*",
                 "Content-Type": "application/json",
@@ -44,14 +44,16 @@ async function faucet_claim(address, beraer_token) {
                 "sec-ch-ua-mobile": "?0",
             }
         };
-        const res = await service.request(config);
-        if (res.data.status === 'ok') {
-            console.log(`Successfully claim faucet 0.5 SOL!`.green);
-        } else {
-            throw new Error(`${address} 领水请求返回失败: ${res.data.message}`);
+        const faucet_result = await service.request(config);
+        if (faucet_result.data.status === 'ok') {
+            logger.success(`Successfully claim faucet 0.5 SOL!`);
         }
     } catch (error) {
-        throw new Error(`${address} 领水请求发送失败: ${error.message}`);
+        if (error.response) {
+            throw new Error(`${address} 领水请求返回失败: ${response.data.message}`);
+        } else {
+            throw new Error(`${address} 领水请求出现错误: ${error.message}`);
+        }
     }
 }
 
@@ -59,11 +61,11 @@ async function faucet_claim(address, beraer_token) {
 async function bypass_turnstile(address, retry_count = 0) {
     const retry = async (reason) => {
         if (retry_count < 5) {
-            console.log(`地址 ${address} 尝试领水失败 : ${reason}, 正在重试...(${retry_count + 1}/5)`.yellow);
+            logger.warn(`地址 ${address} 尝试领水失败 : ${reason}, 正在重试...(${retry_count + 1}/5)`);
             await delay(2);
             return await bypass_turnstile(address, retry_count + 1);
         } else {
-            console.log(`地址 ${address} 领水失败，已达到最大重试次数`.red);
+            logger.error(`地址 ${address} 领水失败，已达到最大重试次数`);
         }
     };
     try{
@@ -83,12 +85,12 @@ async function bypass_turnstile(address, retry_count = 0) {
         for (let i = 0; i < PRIVATE_KEYS.length; i++) {
             const privateKey = PRIVATE_KEYS[i];
             const publicKey = get_keypair(privateKey).publicKey.toBase58();
-            console.log(`正在处理第 ${i + 1}/${PRIVATE_KEYS.length} 个私钥: ${publicKey} 开始领水`.green);
+            logger.debug(`正在处理第 ${i + 1}/${PRIVATE_KEYS.length} 个私钥: ${publicKey} 开始领水`);
             
             await bypass_turnstile(publicKey);
             await delay(3);
         }
     } catch (error) {
-        console.error('Error in main function:', error);
+        logger.error(`Error in faucet function: ${error.message}`);
     }
 })();

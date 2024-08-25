@@ -3,6 +3,7 @@ const { Keypair } = require('@solana/web3.js');
 const bip39 = require('bip39');
 const bs58 = require('bs58');
 const { derivePath } = require('ed25519-hd-key');
+const logger = require('./setup_log')
 
 const privateKeysNUM = 100;
 const seedPhrasesOrKeys = JSON.parse(fs.readFileSync('./config/mnemonics.json', 'utf-8'));
@@ -19,8 +20,6 @@ async function getKeypairFromSeed(seedPhrase, keypairNum) {
         const keypair = deriveKeypair(seed, i);
         const secretKeyBase58 = bs58.encode(keypair.secretKey);
         privateKeys.push(secretKeyBase58);
-        // console.log(`Private Key ${i}:`, bs58.encode(keypair.secretKey));
-        // console.log(`Public Key ${i}:`, keypair.publicKey.toBase58());
     }
     return privateKeys;
   }
@@ -29,5 +28,7 @@ async function getKeypairFromSeed(seedPhrase, keypairNum) {
     try {
         const privateKeys = await getKeypairFromSeed(seedPhrasesOrKeys[0], privateKeysNUM);
         fs.writeFileSync('./config/privateKeys.json', JSON.stringify(privateKeys, null, 2));
-    } catch (error) { }
+    } catch (error) { 
+        logger.error(`写入私钥出现错误 ${error.message}`);
+    }
   })();
