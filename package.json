@@ -2,9 +2,11 @@
   "name": "sonic_tasks",
   "version": "1.0.0",
   "description": "",
-  "main": "account.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "faucet": "node ./src/faucet.js",
+    "account": "node ./src/account.js"
   },
   "keywords": [],
   "author": "",
