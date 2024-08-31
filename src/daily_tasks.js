@@ -208,6 +208,7 @@ async function claimBox(authorize_token, stageNum, address) {
     }
 }
 
+// 获取今日tx总数
 async function getTotalTranscations(authorize_token, address) {
     try {
         await randomDelay(1, 3);
@@ -219,7 +220,6 @@ async function getTotalTranscations(authorize_token, address) {
                 'accept': '*/*', 
                 'accept-language': 'zh-CN,zh;q=0.9', 
                 'authorization': authorize_token,
-                // 'if-none-match': 'W/"105-GxTqTK5YQ4HchymTSDKeRRdjN2c"', 
                 'origin': 'https://odyssey.sonic.game', 
                 'priority': 'u=1, i', 
                 'referer': 'https://odyssey.sonic.game/', 
@@ -331,6 +331,7 @@ async function openBox(authorize_token, keypair) {
     }
 }
 
+// 开启所有箱子函数
 async function openBoxes(authorize_token, keypair, user_available_boxes, retry_count = 0) {
     const address = keypair.publicKey.toString();
 
@@ -362,4 +363,47 @@ async function openBoxes(authorize_token, keypair, user_available_boxes, retry_c
         retry(error);
     }
 }
-module.exports = { check_in, sendSOLRandom, claimBoxes, openBoxes };
+
+// mint NFT函数
+async function mintNFT(keypair, authorize_token, ) {
+    try {
+        logger.info(`地址 ${keypair.publicKey.toString()} 开始mint NFT`);
+        let mintNFT_config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: 'https://odyssey-api-beta.sonic.game/nft-campaign/mint/unlimited/build-tx',
+            headers: { 
+                'accept': '*/*', 
+                'accept-language': 'zh-CN,zh;q=0.9', 
+                'authorization': authorize_token,
+                'cache-control': 'no-cache', 
+                'origin': 'https://odyssey.sonic.game', 
+                'pragma': 'no-cache', 
+                'priority': 'u=1, i', 
+                'referer': 'https://odyssey.sonic.game/', 
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+            }
+        };
+
+        const mintNFT_result = await axios.request(mintNFT_config);
+        // logger.info(mintNFT_result.data.data.hash);
+
+        const mintNFT_tx_hash = mintNFT_result.data.data.hash;
+
+        const mintNFT_txBuffer = Buffer.from(mintNFT_tx_hash, 'base64');
+        const mintNFT_tx = Transaction.from(mintNFT_txBuffer);
+        mintNFT_tx.partialSign(keypair);
+
+        const signature = await sendTrancations(mintNFT_tx, keypair);
+        logger.success(`地址 ${keypair.publicKey.toString()} mintNFT成功: ${signature}`);
+        randomDelay(2, 4);
+    } catch (error) {
+        if (error.response) {
+            logger.error(`mintNFT请求返回错误: ${error.response.data.message}`);
+        } else {
+            logger.error(`mintNFT出现错误: ${error.message}`);
+        }
+    }
+}
+
+module.exports = { check_in, sendSOLRandom, claimBoxes, openBoxes, mintNFT };

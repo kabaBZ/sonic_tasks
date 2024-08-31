@@ -8,7 +8,7 @@ const nacl = require('tweetnacl');
 const fs = require('fs');
 
 const { get_authorize_message, get_authorize_token, get_user_info } = require('./src/initialization')
-const { check_in, sendSOLRandom, claimBoxes, openBoxes } = require('./src/daily_tasks');
+const { check_in, sendSOLRandom, claimBoxes, openBoxes, mintNFT } = require('./src/daily_tasks');
 const logger = require('./src/setup_log');
 const { log } = require('winston');
 
@@ -65,6 +65,9 @@ const privateKeys = JSON.parse(fs.readFileSync('./config/privateKeys.json', 'utf
 
             // // 打开箱子
             await openBoxes(authorize_token, my_keypair, user_available_boxes_after);
+
+            // mint NFT
+            await mintNFT(my_keypair, authorize_token);
         } catch (error) {
             logger.error(`第 ${i + 1} 个私钥执行任务出现问题 ${error.message}`);
         }
